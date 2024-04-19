@@ -7,10 +7,12 @@ using namespace chrono;
 using namespace qalarm;
 
 namespace detail {
+
 template <typename T, typename... Args>
 std::unique_ptr<T> make_unique(Args &&... args) {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
+
 } // namespace detail
 
 Alarm::Alarm(std::vector<std::unique_ptr<MsgInterceptor>> interceptors,
@@ -29,7 +31,8 @@ Alarm::Alarm(std::vector<std::unique_ptr<MsgInterceptor>> interceptors,
     m_thread = thread([this]() {
         auto fut = this->m_promise.get_future();
         dzlog_debug("Alarm thread run");
-        while (fut.wait_for(milliseconds(50)) != future_status::ready) {
+
+        while (fut.wait_for(milliseconds(10)) != future_status::ready) {
             std::unique_ptr<Message> ptr{nullptr};
             if (this->m_queue.TryPop(ptr) && ptr != nullptr) {
                 if (this->check(ptr)) {
@@ -122,7 +125,7 @@ int Alarm::AlarmDebug(uint32_t code, string desc, MsgKvType annot) {
 }
 
 bool Alarm::check(unique_ptr<Message> &msg) {
-    auto now = std::chrono::steady_clock::now();
+    auto now = std::chrono::system_clock::now();
     auto id = msg->GeMsgId();
     auto it = m_limiter.find(id);
     if (it == m_limiter.end()) {

@@ -31,4 +31,14 @@ private:
     const std::string m_addr;
 };
 
+class MsgPrinter : public MsgInterceptor {
+public:
+    MsgPrinter();
+    ~MsgPrinter() override;
+
+    // thead-safe
+    void Intercept(std::unique_ptr<Message> &msg) override;
+    void Close() override;
+};
+
 } // namespace qalarm

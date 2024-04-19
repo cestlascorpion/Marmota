@@ -11,7 +11,7 @@ namespace qalarm {
 
 using MsgKvType = std::map<std::string, std::string>;
 using MsgIdType = uint64_t;
-using MsgTpType = std::chrono::time_point<std::chrono::steady_clock>;
+using MsgTpType = std::chrono::time_point<std::chrono::system_clock>;
 using MsgDurType = std::chrono::seconds;
 
 constexpr const char *kAppKey = "app";
@@ -52,7 +52,7 @@ private:
     uint32_t m_code;
     std::string m_desc;
     std::map<std::string, std::string> m_annotation;
-    std::chrono::time_point<std::chrono::steady_clock> m_tp;
+    std::chrono::time_point<std::chrono::system_clock> m_tp;
 };
 
 } // namespace qalarm

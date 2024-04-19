@@ -83,7 +83,7 @@ MsgFiller::MsgFiller()
     : m_app(detail::get_app())
     , m_pid(detail::get_pid())
     , m_addr(detail::get_ipv4_linux()) {
-    dzlog_debug("MsgFiller ctor %s %s %s",m_app.c_str(), m_pid.c_str(), m_addr.c_str());
+    dzlog_debug("MsgFiller ctor %s %s %s", m_app.c_str(), m_pid.c_str(), m_addr.c_str());
 }
 
 MsgFiller::~MsgFiller() {
@@ -99,4 +99,21 @@ void MsgFiller::Intercept(unique_ptr<Message> &msg) {
 void MsgFiller::Close() {
     // do nothing
     dzlog_debug("MsgFill close");
+}
+
+MsgPrinter::MsgPrinter() {
+    dzlog_debug("MsgPrinter ctor");
+}
+
+MsgPrinter::~MsgPrinter() {
+    dzlog_debug("MsgPrinter dctor");
+}
+
+void MsgPrinter::Intercept(unique_ptr<Message> &msg) {
+    dzlog_debug("MsgPrinter %s", Message::ToString(msg).c_str());
+}
+
+void MsgPrinter::Close() {
+    // do nothing
+    dzlog_debug("MsgPrinter close");
 }

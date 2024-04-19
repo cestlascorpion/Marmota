@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.16)
 project(Marmota)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -22,4 +22,4 @@ add_executable(Marmota main.cpp
         src/alarm.h
         src/alarm.cpp)
 
-target_link_libraries(Marmota zlog)
+target_link_libraries(Marmota zlog json-c)
