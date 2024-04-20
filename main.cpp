@@ -3,13 +3,14 @@
 #include <signal.h>
 #include <atomic>
 
-#include "src/alarm.h"
-#include "src/interceptor.h"
-#include "src/exporter.h"
+#include "alarmer.h"
+#include "interceptor.h"
+#include "exporter.h"
 
 #include "zlog.h"
 
 using namespace std;
+using namespace qalarm;
 
 atomic<bool> running;
 
@@ -20,6 +21,22 @@ void signal_handler(int sig) {
     // exit(sig);
 }
 
+shared_ptr<Alarmer> GetDefaultAlarmer() {
+    vector<unique_ptr<MsgInterceptor>> interceptors;
+    auto mfInter = unique_ptr<MsgFiller>(new MsgFiller());
+    interceptors.push_back(std::move(mfInter));
+    auto mpInter = unique_ptr<MsgPrinter>(new MsgPrinter());
+    interceptors.push_back(std::move(mpInter));
+
+    vector<unique_ptr<MsgExporter>> exporters;
+    auto hExp = unique_ptr<HttpExporter>(new HttpExporter());
+    exporters.push_back(std::move(hExp));
+    auto rExp = unique_ptr<RedisExporter>(new RedisExporter());
+    exporters.push_back(std::move(rExp));
+
+    return make_shared<Alarmer>(std::move(interceptors), std::move(exporters));
+}
+
 int main(/*int argc, char **argv*/) {
     auto ret = dzlog_init("zlog.conf", "test");
     if (ret != 0) {
@@ -28,25 +45,17 @@ int main(/*int argc, char **argv*/) {
     }
     signal(SIGTERM, signal_handler); // kill -15 PID
 
-    vector<unique_ptr<qalarm::MsgInterceptor>> interceptors;
-    auto mfInter = unique_ptr<qalarm::MsgFiller>(new qalarm::MsgFiller());
-    interceptors.push_back(std::move(mfInter));
-
-    vector<unique_ptr<qalarm::MsgExporter>> exporters;
-    auto hExp = unique_ptr<qalarm::HttpExporter>(new qalarm::HttpExporter());
-    auto rExp = unique_ptr<qalarm::RedisExporter>(new qalarm::RedisExporter());
-
-    auto m = make_shared<qalarm::Alarm>(std::move(interceptors), std::move(exporters));
+    auto alarmer = GetDefaultAlarmer();
 
     running.store(true);
     while (running.load()) {
         dzlog_debug("hello, zlog");
-        m->AlarmFatal(ZLOG_LEVEL_FATAL, "fatal");
-        m->AlarmError(ZLOG_LEVEL_ERROR, "error");
-        m->AlarmWarn(ZLOG_LEVEL_WARN, "warn");
-        m->AlarmNotice(ZLOG_LEVEL_NOTICE, "notice");
-        m->AlarmInfo(ZLOG_LEVEL_INFO, "info");
-        m->AlarmDebug(ZLOG_LEVEL_DEBUG, "debug");
+        alarmer->AlarmFatal(ZLOG_LEVEL_FATAL, "fatal");
+        alarmer->AlarmError(ZLOG_LEVEL_ERROR, "error");
+        alarmer->AlarmWarn(ZLOG_LEVEL_WARN, "warn");
+        alarmer->AlarmNotice(ZLOG_LEVEL_NOTICE, "notice");
+        alarmer->AlarmInfo(ZLOG_LEVEL_INFO, "info");
+        alarmer->AlarmDebug(ZLOG_LEVEL_DEBUG, "debug");
         sleep(1);
     }
     return 0;

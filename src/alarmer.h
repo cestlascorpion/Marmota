@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <memory>
-#include <chrono>
 #include <future>
 
 #include "message.h"
@@ -13,12 +12,12 @@ namespace qalarm {
 class MsgInterceptor;
 class MsgExporter;
 
-class Alarm {
+class Alarmer {
 public:
-    Alarm(std::vector<std::unique_ptr<MsgInterceptor>> interceptors,
-          std::vector<std::unique_ptr<MsgExporter>> exporters);
+    Alarmer(std::vector<std::unique_ptr<MsgInterceptor>> interceptors,
+            std::vector<std::unique_ptr<MsgExporter>> exporters);
 
-    ~Alarm();
+    ~Alarmer();
 
 public:
     // thread-safe
@@ -38,7 +37,7 @@ private:
     bool check(std::unique_ptr<Message> &msg);
 
 private:
-    std::map<MsgLevel, MsgDurType> m_table;
+    std::map<MsgLevel, MsgTpType> m_table;
     std::map<MsgIdType, MsgTpType> m_limiter;
     std::vector<std::unique_ptr<MsgInterceptor>> m_interceptors;
     std::vector<std::unique_ptr<MsgExporter>> m_exporters;

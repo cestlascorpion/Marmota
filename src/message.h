@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <chrono>
 #include <memory>
 #include <map>
 
@@ -9,16 +8,11 @@
 
 namespace qalarm {
 
-using MsgKvType = std::map<std::string, std::string>;
-using MsgIdType = uint64_t;
-using MsgTpType = std::chrono::time_point<std::chrono::system_clock>;
-using MsgDurType = std::chrono::seconds;
-
 constexpr const char *kAppKey = "app";
 constexpr const char *kPidKey = "pid";
 constexpr const char *kAddrKey = "addr";
 
-enum class MsgLevel {
+enum class MsgLevel : uint32_t {
     FATAL = ZLOG_LEVEL_FATAL,
     ERROR = ZLOG_LEVEL_ERROR,
     WARN = ZLOG_LEVEL_WARN,
@@ -27,9 +21,16 @@ enum class MsgLevel {
     DEBUG = ZLOG_LEVEL_DEBUG,
 };
 
+using MsgCoType = uint32_t;
+using MsgTpType = time_t;
+using MsgKvType = std::map<std::string, std::string>;
+
+using MsgIdType = uint64_t;
+
 class Message {
 public:
-    Message(MsgLevel level, uint32_t code, std::string desc, MsgKvType annot = MsgKvType());
+    Message(MsgLevel level, MsgCoType code, std::string desc, MsgKvType annot = MsgKvType());
+    Message(MsgLevel level, MsgCoType code, std::string desc, MsgTpType tp, MsgKvType annot = MsgKvType());
 
     Message(const Message &) = delete;
     Message &operator=(const Message &) = delete;
@@ -48,11 +49,11 @@ public:
     static std::unique_ptr<Message> FromString(const std::string &str);
 
 private:
-    MsgLevel m_level;
-    uint32_t m_code;
+    MsgLevel m_lv;
+    MsgCoType m_co;
+    MsgTpType m_tp;
     std::string m_desc;
     std::map<std::string, std::string> m_annotation;
-    std::chrono::time_point<std::chrono::system_clock> m_tp;
 };
 
 } // namespace qalarm

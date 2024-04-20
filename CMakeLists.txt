@@ -19,7 +19,20 @@ add_executable(Marmota main.cpp
         src/interceptor.cpp
         src/exporter.h
         src/exporter.cpp
-        src/alarm.h
-        src/alarm.cpp)
+        src/alarmer.h
+        src/alarmer.cpp)
 
 target_link_libraries(Marmota zlog json-c)
+
+add_executable(Message test/message.cpp
+        src/queue.h
+        src/message.h
+        src/message.cpp
+        src/interceptor.h
+        src/interceptor.cpp
+        src/exporter.h
+        src/exporter.cpp
+        src/alarmer.h
+        src/alarmer.cpp)
+
+target_link_libraries(Message zlog json-c)

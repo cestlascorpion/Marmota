@@ -1,7 +1,9 @@
 #include "message.h"
 
+#include <chrono>
 #include <iomanip>
 #include <time.h>
+#include <string.h>
 
 #include "json-c/json.h"
 
@@ -11,16 +13,13 @@ using namespace qalarm;
 namespace detail {
 
 struct JsonGurad {
-    JsonGurad()
-        : job(json_object_new_object()) {
+    explicit JsonGurad(json_object *obj)
+        : job(obj) {
     }
-    explicit JsonGurad(json_object *j)
-        : job(j) {
-    }
-
     ~JsonGurad() {
         json_object_put(job);
     }
+
     struct json_object *job;
 };
 
@@ -42,34 +41,94 @@ string FormatMsgLevel(MsgLevel level) {
     return "UNKNOWN";
 }
 
-string FormatTimePoint(chrono::time_point<std::chrono::system_clock> tp) {
-    auto t = chrono::system_clock::to_time_t(tp);
+MsgLevel ParseMsgLevel(const char *level) {
+    if (level == nullptr || strlen(level) < 1) {
+        return MsgLevel::DEBUG;
+    }
+    switch (level[0]) {
+    case 'F':
+        return MsgLevel::FATAL;
+    case 'E':
+        return MsgLevel::ERROR;
+    case 'W':
+        return MsgLevel::WARN;
+    case 'N':
+        return MsgLevel::NOTICE;
+    case 'I':
+        return MsgLevel::INFO;
+    case 'D':
+        return MsgLevel::DEBUG;
+    }
+    return MsgLevel::DEBUG;
+}
+
+string FormatMsgCode(MsgCoType code) {
+    char c[11]{0};
+    sprintf(c, "0x%08X", code);
+    return string(c);
+}
+
+MsgCoType ParseMsgCode(const char *code) {
+    if (code == nullptr || strlen(code) < 3 || code[0] != '0' || code[1] != 'x') {
+        return 0;
+    }
+    return static_cast<MsgCoType>(strtoul(code + 2, nullptr, 16));
+}
+
+string FormatTimePoint(MsgTpType tp) {
     char buffer[20];
-    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", std::localtime(&t));
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", std::localtime(&tp));
     return string(buffer);
 }
 
-template <typename T, typename... Args>
-std::unique_ptr<T> make_unique(Args &&... args) {
+MsgTpType ParseTimePoint(const char *tp) {
+    if (tp == nullptr) {
+        return 0;
+    }
+    struct tm tm;
+    memset(&tm, 0, sizeof(tm));
+    if (strptime(tp, "%Y-%m-%d %H:%M:%S", &tm) == nullptr) {
+        return 0;
+    }
+    return mktime(&tm);
+}
+
+// make_unique support for pre c++14
+#if __cplusplus >= 201402L // C++14 and beyond
+using std::make_unique;
+#else
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args &&... args)
+{
+    static_assert(!std::is_array<T>::value, "arrays not supported");
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
+#endif
 
 }; // namespace detail
 
-Message::Message(MsgLevel level, uint32_t code, string desc, MsgKvType annot)
-    : m_level(level)
-    , m_code(code)
+Message::Message(MsgLevel level, MsgCoType code, string desc, MsgKvType annot)
+    : m_lv(level)
+    , m_co(code)
+    , m_tp(chrono::duration_cast<chrono::seconds>(chrono::system_clock::now().time_since_epoch()).count())
     , m_desc(std::move(desc))
-    , m_annotation(std::move(annot))
-    , m_tp(chrono::system_clock::now()) {
+    , m_annotation(std::move(annot)) {
+}
+
+Message::Message(MsgLevel level, MsgCoType code, string desc, MsgTpType tp, MsgKvType annot)
+    : m_lv(level)
+    , m_co(code)
+    , m_tp(tp)
+    , m_desc(std::move(desc))
+    , m_annotation(std::move(annot)) {
 }
 
 MsgIdType Message::GeMsgId() const {
-    return std::hash<string>()(m_desc) ^ m_code;
+    return std::hash<string>()(m_desc) ^ m_co;
 }
 
 MsgLevel Message::GetMsgLevel() const {
-    return m_level;
+    return m_lv;
 }
 
 void Message::SetAnnotation(const string &k, string v) {
@@ -85,11 +144,15 @@ string Message::GetAnnotation(const string &k) const {
 }
 
 std::string Message::ToString(unique_ptr<Message> &msg) {
-    detail::JsonGurad json;
-    json_object_object_add(json.job, "level", json_object_new_string(detail::FormatMsgLevel(msg->m_level).c_str()));
-    json_object_object_add(json.job, "code", json_object_new_string(to_string(msg->m_code).c_str()));
-    json_object_object_add(json.job, "desc", json_object_new_string(msg->m_desc.c_str()));
-    json_object_object_add(json.job, "tp", json_object_new_string(detail::FormatTimePoint(msg->m_tp).c_str()));
+    detail::JsonGurad json(json_object_new_object());
+    auto lv = detail::FormatMsgLevel(msg->m_lv);
+    json_object_object_add(json.job, "level", json_object_new_string(lv.c_str()));
+    auto co = detail::FormatMsgCode(msg->m_co);
+    json_object_object_add(json.job, "code", json_object_new_string(co.c_str()));
+    auto tp = detail::FormatTimePoint(msg->m_tp);
+    json_object_object_add(json.job, "tp", json_object_new_string(tp.c_str()));
+    auto desc = msg->m_desc;
+    json_object_object_add(json.job, "desc", json_object_new_string(desc.c_str()));
     if (!msg->m_annotation.empty()) {
         auto annot = json_object_new_object();
         for (auto &it : msg->m_annotation) {
@@ -101,44 +164,52 @@ std::string Message::ToString(unique_ptr<Message> &msg) {
 }
 
 std::unique_ptr<Message> Message::FromString(const string &str) {
-    /*
-    auto j = json_tokener_parse(str.c_str());
-    if (!j) {
+    auto obj = json_tokener_parse(str.c_str());
+    if (!obj) {
         return nullptr;
     }
 
-    detail::JsonGurad json(j);
-    auto level = json_object_object_get_ex(json.job, "level");
-    if (!level) {
+    detail::JsonGurad json(obj);
+    struct json_object *tmp = nullptr;
+    if (json_object_object_get_ex(json.job, "level", &tmp) != 1) {
         return nullptr;
     }
-    // TODO:
-    auto code = json_object_object_get_ex(json.job, "code");
-    if (!code) {
+    if (json_object_get_type(tmp) != json_type_string) {
         return nullptr;
     }
-    // TODO:
-    auto desc = json_object_object_get_ex(json.job, "desc");
-    if (!desc) {
-        return nullptr;
-    }
-    // TODO:
-    auto tp = json_object_object_get_ex(json.job, "tp");
-    if (!tp) {
-        return nullptr;
-    }
-    // TODO:
+    MsgLevel level = detail::ParseMsgLevel(json_object_get_string(tmp));
 
-    auto msg = detail::make_unique<Message>(); // TODO:
-    auto annot = json_object_object_get(json.job, "annot");
-    if (annot != nullptr) {
-        for (auto it = json_object_iterate(annot); it; it = json_object_iterate(annot)) {
-            auto key = json_object_iter_key(it);
-            auto val = json_object_iter_value(it);
-            msg->m_annotation[key] = json_object_get_string(val);
+    if (json_object_object_get_ex(json.job, "code", &tmp) != 1) {
+        return nullptr;
+    }
+    if (json_object_get_type(tmp) != json_type_string) {
+        return nullptr;
+    }
+    MsgCoType code = detail::ParseMsgCode(json_object_get_string(tmp));
+
+    if (json_object_object_get_ex(json.job, "tp", &tmp) != 1) {
+        return nullptr;
+    }
+    if (json_object_get_type(tmp) != json_type_string) {
+        return nullptr;
+    }
+    MsgTpType tp = detail::ParseTimePoint(json_object_get_string(tmp));
+
+    if (json_object_object_get_ex(json.job, "desc", &tmp) != 1) {
+        return nullptr;
+    }
+    if (json_object_get_type(tmp) != json_type_string) {
+        return nullptr;
+    }
+    string desc = json_object_get_string(tmp);
+
+    auto msg = detail::make_unique<Message>(level, code, desc, tp);
+    if (json_object_object_get_ex(json.job, "annot", &tmp) == 1 && json_object_get_type(tmp) == json_type_object) {
+        json_object_object_foreach(tmp, key, val) {
+            if (json_object_get_type(val) == json_type_string) {
+                msg->SetAnnotation(key, json_object_get_string(val));
+            }
         }
     }
     return msg;
-    */
-    return nullptr;
 }
