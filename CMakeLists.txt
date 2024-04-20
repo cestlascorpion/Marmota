@@ -17,6 +17,7 @@ add_executable(Marmota main.cpp
         src/message.cpp
         src/interceptor.h
         src/interceptor.cpp
+        src/httplib.h
         src/exporter.h
         src/exporter.cpp
         src/alarmer.h
@@ -30,6 +31,7 @@ add_executable(Message test/message.cpp
         src/message.cpp
         src/interceptor.h
         src/interceptor.cpp
+        src/httplib.h
         src/exporter.h
         src/exporter.cpp
         src/alarmer.h

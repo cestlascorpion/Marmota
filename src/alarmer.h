@@ -34,6 +34,7 @@ public:
     int AlarmDebug(uint32_t code, std::string desc, MsgKvType annot = MsgKvType());
 
 private:
+    // thread-unsafe
     bool check(std::unique_ptr<Message> &msg);
 
 private:
