@@ -19,6 +19,7 @@ public:
     HttpExporter();
     ~HttpExporter() override;
 
+    // thread-unsafe
     bool Export(std::unique_ptr<Message>& msg) override;
     void Close() override;
 };
@@ -28,6 +29,7 @@ public:
     RedisExporter();
     ~RedisExporter() override;
 
+    // thread-unsafe
     bool Export(std::unique_ptr<Message>& msg) override;
     void Close() override;
 };
