@@ -140,7 +140,7 @@ bool Alarmer::check(unique_ptr<Message> &msg) {
     }
     auto diff = now - it->second;
     if (diff < m_table[msg->GetMsgLevel()]) {
-        // dzlog_debug("msg %lu ignore due to filter", id);
+        dzlog_debug("msg %lu ignore due to filter", id);
         return false;
     }
     it->second = now;

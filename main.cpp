@@ -1,6 +1,5 @@
-#include <stdio.h>
 #include <unistd.h>
-#include <signal.h>
+#include <csignal>
 #include <atomic>
 
 #include "alarmer.h"

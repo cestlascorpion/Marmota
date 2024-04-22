@@ -1,7 +1,7 @@
 #include "interceptor.h"
 
 #include <unistd.h>
-#include <string.h>
+#include <cstring>
 #include <ifaddrs.h>
 #include <arpa/inet.h>
 
@@ -31,9 +31,9 @@ string get_app() {
 }
 
 int get_ip_linux(int ipv4_6, string &out) {
-    int ret_val = 0;
+    int ret_val;
     struct ifaddrs *ifAddrStruct = nullptr;
-    void *tmpAddrPtr = nullptr;
+    void *tmpAddrPtr;
 
     ret_val = getifaddrs(&ifAddrStruct);
     if (ret_val != 0) {
@@ -42,26 +42,26 @@ int get_ip_linux(int ipv4_6, string &out) {
     }
 
     string str_ipvX;
-    int padress_buf_len = 0;
+    int ad_buf_len;
     char addressBuffer[INET6_ADDRSTRLEN] = {0};
 
     if (ipv4_6 == AF_INET6) {
-        padress_buf_len = INET6_ADDRSTRLEN;
+        ad_buf_len = INET6_ADDRSTRLEN;
     } else {
-        padress_buf_len = INET_ADDRSTRLEN;
+        ad_buf_len = INET_ADDRSTRLEN;
     }
 
     while (ifAddrStruct != nullptr) {
         if (ipv4_6 == ifAddrStruct->ifa_addr->sa_family) {
             // is a valid IP4 Address
             tmpAddrPtr = &((struct sockaddr_in *)ifAddrStruct->ifa_addr)->sin_addr;
-            inet_ntop(ipv4_6, tmpAddrPtr, addressBuffer, padress_buf_len);
+            inet_ntop(ipv4_6, tmpAddrPtr, addressBuffer, static_cast<socklen_t>(ad_buf_len));
             str_ipvX = string(addressBuffer);
             if (!out.empty()) {
                 out.append(",");
             }
             out.append(str_ipvX);
-            memset(addressBuffer, 0, padress_buf_len);
+            memset(addressBuffer, 0, static_cast<size_t>(ad_buf_len));
         }
         ifAddrStruct = ifAddrStruct->ifa_next;
     }

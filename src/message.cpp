@@ -1,9 +1,8 @@
 #include "message.h"
 
 #include <chrono>
-#include <iomanip>
-#include <time.h>
-#include <string.h>
+#include <ctime>
+#include <cstring>
 
 #include "json-c/json.h"
 
@@ -12,11 +11,11 @@ using namespace qalarm;
 
 namespace detail {
 
-struct JsonGurad {
-    explicit JsonGurad(json_object *obj)
+struct JsonGuard {
+    explicit JsonGuard(json_object *obj)
         : job(obj) {
     }
-    ~JsonGurad() {
+    ~JsonGuard() {
         json_object_put(job);
     }
 
@@ -65,7 +64,7 @@ MsgLevel ParseMsgLevel(const char *level) {
 string FormatMsgCode(MsgCoType code) {
     char c[11]{0};
     sprintf(c, "0x%08X", code);
-    return string(c);
+    return string{c};
 }
 
 MsgCoType ParseMsgCode(const char *code) {
@@ -78,14 +77,14 @@ MsgCoType ParseMsgCode(const char *code) {
 string FormatTimePoint(MsgTpType tp) {
     char buffer[20];
     strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", std::localtime(&tp));
-    return string(buffer);
+    return string{buffer};
 }
 
 MsgTpType ParseTimePoint(const char *tp) {
     if (tp == nullptr) {
         return 0;
     }
-    struct tm tm;
+    struct tm tm{};
     memset(&tm, 0, sizeof(tm));
     if (strptime(tp, "%Y-%m-%d %H:%M:%S", &tm) == nullptr) {
         return 0;
@@ -105,7 +104,7 @@ std::unique_ptr<T> make_unique(Args &&... args)
 }
 #endif
 
-}; // namespace detail
+} // namespace detail
 
 Message::Message(MsgLevel level, MsgCoType code, string desc, MsgKvType annot)
     : m_lv(level)
@@ -144,7 +143,7 @@ string Message::GetAnnotation(const string &k) const {
 }
 
 std::string Message::ToString(unique_ptr<Message> &msg) {
-    detail::JsonGurad json(json_object_new_object());
+    detail::JsonGuard json(json_object_new_object());
     auto lv = detail::FormatMsgLevel(msg->m_lv);
     json_object_object_add(json.job, "level", json_object_new_string(lv.c_str()));
     auto co = detail::FormatMsgCode(msg->m_co);
@@ -169,7 +168,7 @@ std::unique_ptr<Message> Message::FromString(const string &str) {
         return nullptr;
     }
 
-    detail::JsonGurad json(obj);
+    detail::JsonGuard json(obj);
     struct json_object *tmp = nullptr;
     if (json_object_object_get_ex(json.job, "level", &tmp) != 1) {
         return nullptr;

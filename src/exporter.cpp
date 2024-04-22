@@ -16,7 +16,7 @@ HttpExporter::~HttpExporter() {
     dzlog_debug("HttpExporter dctor");
 }
 
-bool HttpExporter::Export(std::unique_ptr<Message>& msg) {
+bool HttpExporter::Export(std::unique_ptr<Message>&) {
     // TODO
     return true;
 }
@@ -36,7 +36,7 @@ RedisExporter::~RedisExporter() {
     dzlog_debug("RedisExporter dctor");
 }
 
-bool RedisExporter::Export(std::unique_ptr<Message>& msg) {
+bool RedisExporter::Export(std::unique_ptr<Message>&) {
     // TODO
     return true;
 }
