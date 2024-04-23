@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(Marmota)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wconversion -Wsizeof-pointer-memaccess \
                      -Wfloat-equal -Wconversion-null -Woverflow -Wshadow \
@@ -23,7 +23,7 @@ add_executable(Marmota main.cpp
         src/alarmer.h
         src/alarmer.cpp)
 
-target_link_libraries(Marmota zlog json-c)
+target_link_libraries(Marmota zlog json-c redis++ hiredis)
 
 add_executable(Message test/message.cpp
         src/queue.h
@@ -37,4 +37,18 @@ add_executable(Message test/message.cpp
         src/alarmer.h
         src/alarmer.cpp)
 
-target_link_libraries(Message zlog json-c)
+target_link_libraries(Message zlog json-c redis++ hiredis)
+
+add_executable(Server test/server.cpp
+        src/queue.h
+        src/message.h
+        src/message.cpp
+        src/interceptor.h
+        src/interceptor.cpp
+        src/httplib.h
+        src/exporter.h
+        src/exporter.cpp
+        src/alarmer.h
+        src/alarmer.cpp)
+
+target_link_libraries(Server zlog json-c redis++ hiredis)

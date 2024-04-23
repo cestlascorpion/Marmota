@@ -1,4 +1,5 @@
 #include <iostream>
+#include <memory>
 
 #include "message.h"
 
@@ -13,8 +14,8 @@ int main() {
         return 0;
     }
 
-    auto msg = unique_ptr<qalarm::Message>(new qalarm::Message(qalarm::MsgLevel::DEBUG, qalarm::MsgCoType(1),
-                                                               "hello, zlog", {{"k1", "v1"}, {"k2", "v2"}}));
+    auto msg = make_unique<qalarm::Message>(qalarm::MsgLevel::DEBUG, 1, "hello, zlog",
+                                            map<string, string>{{"k1", "v1"}, {"k2", "v2"}});
     auto str = qalarm::Message::ToString(msg);
     cout << str << endl;
     auto gsm = qalarm::Message::FromString(str);

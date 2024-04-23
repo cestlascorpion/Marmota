@@ -21,25 +21,31 @@ public:
 
 public:
     // thread-safe
-    int AlarmFatal(uint32_t code, std::string desc, MsgKvType annot = MsgKvType());
+    int AlarmFatal(uint32_t code, std::string desc,
+                   std::map<std::string, std::string> annot = std::map<std::string, std::string>());
     // thread-safe
-    int AlarmError(uint32_t code, std::string desc, MsgKvType annot = MsgKvType());
+    int AlarmError(uint32_t code, std::string desc,
+                   std::map<std::string, std::string> annot = std::map<std::string, std::string>());
     // thread-safe
-    int AlarmWarn(uint32_t code, std::string desc, MsgKvType annot = MsgKvType());
+    int AlarmWarn(uint32_t code, std::string desc,
+                  std::map<std::string, std::string> annot = std::map<std::string, std::string>());
     // thread-safe
-    int AlarmNotice(uint32_t code, std::string desc, MsgKvType annot = MsgKvType());
+    int AlarmNotice(uint32_t code, std::string desc,
+                    std::map<std::string, std::string> annot = std::map<std::string, std::string>());
     // thread-safe
-    int AlarmInfo(uint32_t code, std::string desc, MsgKvType annot = MsgKvType());
+    int AlarmInfo(uint32_t code, std::string desc,
+                  std::map<std::string, std::string> annot = std::map<std::string, std::string>());
     // thread-safe
-    int AlarmDebug(uint32_t code, std::string desc, MsgKvType annot = MsgKvType());
+    int AlarmDebug(uint32_t code, std::string desc,
+                   std::map<std::string, std::string> annot = std::map<std::string, std::string>());
 
 private:
     // thread-unsafe
     bool check(std::unique_ptr<Message> &msg);
 
 private:
-    std::map<MsgLevel, MsgTpType> m_table;
-    std::map<MsgIdType, MsgTpType> m_limiter;
+    std::map<MsgLevel, time_t> m_table;
+    std::map<uint64_t, time_t> m_limiter;
     std::vector<std::unique_ptr<MsgInterceptor>> m_interceptors;
     std::vector<std::unique_ptr<MsgExporter>> m_exporters;
     MPSCQueue<std::unique_ptr<Message>> m_queue;

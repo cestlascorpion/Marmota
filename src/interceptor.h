@@ -2,11 +2,10 @@
 
 #include <memory>
 #include <string>
-#include <map>
-
-#include "message.h"
 
 namespace qalarm {
+
+class Message;
 
 class MsgInterceptor {
 public:

@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <csignal>
 #include <atomic>
+#include <memory>
 
 #include "alarmer.h"
 #include "interceptor.h"
@@ -22,15 +23,15 @@ void signal_handler(int sig) {
 
 shared_ptr<Alarmer> GetDefaultAlarmer() {
     vector<unique_ptr<MsgInterceptor>> interceptors;
-    auto mfInter = unique_ptr<MsgFiller>(new MsgFiller());
+    auto mfInter = make_unique<MsgFiller>();
     interceptors.push_back(std::move(mfInter));
-    auto mpInter = unique_ptr<MsgPrinter>(new MsgPrinter());
+    auto mpInter = make_unique<MsgPrinter>();
     interceptors.push_back(std::move(mpInter));
 
     vector<unique_ptr<MsgExporter>> exporters;
-    auto hExp = unique_ptr<HttpExporter>(new HttpExporter());
+    auto hExp = make_unique<HttpExporter>("0.0.0.0", 8080, "/alarm/report");
     exporters.push_back(std::move(hExp));
-    auto rExp = unique_ptr<RedisExporter>(new RedisExporter());
+    auto rExp = make_unique<RedisExporter>("tcp://127.0.0.1:6379");
     exporters.push_back(std::move(rExp));
 
     return make_shared<Alarmer>(std::move(interceptors), std::move(exporters));

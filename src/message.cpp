@@ -61,30 +61,30 @@ MsgLevel ParseMsgLevel(const char *level) {
     return MsgLevel::DEBUG;
 }
 
-string FormatMsgCode(MsgCoType code) {
+string FormatMsgCode(uint32_t code) {
     char c[11]{0};
     sprintf(c, "0x%08X", code);
     return string{c};
 }
 
-MsgCoType ParseMsgCode(const char *code) {
+uint32_t ParseMsgCode(const char *code) {
     if (code == nullptr || strlen(code) < 3 || code[0] != '0' || code[1] != 'x') {
         return 0;
     }
-    return static_cast<MsgCoType>(strtoul(code + 2, nullptr, 16));
+    return static_cast<uint32_t>(strtoul(code + 2, nullptr, 16));
 }
 
-string FormatTimePoint(MsgTpType tp) {
+string FormatTimePoint(time_t tp) {
     char buffer[20];
     strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", std::localtime(&tp));
     return string{buffer};
 }
 
-MsgTpType ParseTimePoint(const char *tp) {
+time_t ParseTimePoint(const char *tp) {
     if (tp == nullptr) {
         return 0;
     }
-    struct tm tm{};
+    struct tm tm {};
     memset(&tm, 0, sizeof(tm));
     if (strptime(tp, "%Y-%m-%d %H:%M:%S", &tm) == nullptr) {
         return 0;
@@ -92,21 +92,9 @@ MsgTpType ParseTimePoint(const char *tp) {
     return mktime(&tm);
 }
 
-// make_unique support for pre c++14
-#if __cplusplus >= 201402L // C++14 and beyond
-using std::make_unique;
-#else
-template<typename T, typename... Args>
-std::unique_ptr<T> make_unique(Args &&... args)
-{
-    static_assert(!std::is_array<T>::value, "arrays not supported");
-    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-}
-#endif
-
 } // namespace detail
 
-Message::Message(MsgLevel level, MsgCoType code, string desc, MsgKvType annot)
+Message::Message(MsgLevel level, uint32_t code, string desc, map<string, string> annot)
     : m_lv(level)
     , m_co(code)
     , m_tp(chrono::duration_cast<chrono::seconds>(chrono::system_clock::now().time_since_epoch()).count())
@@ -114,7 +102,7 @@ Message::Message(MsgLevel level, MsgCoType code, string desc, MsgKvType annot)
     , m_annotation(std::move(annot)) {
 }
 
-Message::Message(MsgLevel level, MsgCoType code, string desc, MsgTpType tp, MsgKvType annot)
+Message::Message(MsgLevel level, uint32_t code, string desc, time_t tp, map<string, string> annot)
     : m_lv(level)
     , m_co(code)
     , m_tp(tp)
@@ -122,7 +110,7 @@ Message::Message(MsgLevel level, MsgCoType code, string desc, MsgTpType tp, MsgK
     , m_annotation(std::move(annot)) {
 }
 
-MsgIdType Message::GeMsgId() const {
+uint64_t Message::GeMsgId() const {
     return std::hash<string>()(m_desc) ^ m_co;
 }
 
@@ -132,14 +120,6 @@ MsgLevel Message::GetMsgLevel() const {
 
 void Message::SetAnnotation(const string &k, string v) {
     m_annotation[k] = std::move(v);
-}
-
-string Message::GetAnnotation(const string &k) const {
-    auto it = m_annotation.find(k);
-    if (it != m_annotation.end()) {
-        return it->second;
-    }
-    return "";
 }
 
 std::string Message::ToString(unique_ptr<Message> &msg) {
@@ -184,7 +164,7 @@ std::unique_ptr<Message> Message::FromString(const string &str) {
     if (json_object_get_type(tmp) != json_type_string) {
         return nullptr;
     }
-    MsgCoType code = detail::ParseMsgCode(json_object_get_string(tmp));
+    uint32_t code = detail::ParseMsgCode(json_object_get_string(tmp));
 
     if (json_object_object_get_ex(json.job, "tp", &tmp) != 1) {
         return nullptr;
@@ -192,7 +172,7 @@ std::unique_ptr<Message> Message::FromString(const string &str) {
     if (json_object_get_type(tmp) != json_type_string) {
         return nullptr;
     }
-    MsgTpType tp = detail::ParseTimePoint(json_object_get_string(tmp));
+    time_t tp = detail::ParseTimePoint(json_object_get_string(tmp));
 
     if (json_object_object_get_ex(json.job, "desc", &tmp) != 1) {
         return nullptr;
@@ -202,7 +182,7 @@ std::unique_ptr<Message> Message::FromString(const string &str) {
     }
     string desc = json_object_get_string(tmp);
 
-    auto msg = detail::make_unique<Message>(level, code, desc, tp);
+    auto msg = make_unique<Message>(level, code, desc, tp);
     if (json_object_object_get_ex(json.job, "annot", &tmp) == 1 && json_object_get_type(tmp) == json_type_object) {
         json_object_object_foreach(tmp, key, val) {
             if (json_object_get_type(val) == json_type_string) {

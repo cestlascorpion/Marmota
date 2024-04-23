@@ -1,4 +1,5 @@
 #include "interceptor.h"
+#include "message.h"
 
 #include <unistd.h>
 #include <cstring>
@@ -12,11 +13,15 @@ using namespace qalarm;
 
 namespace detail {
 
-string get_pid() {
+constexpr const char *kAppKey = "app";
+constexpr const char *kPidKey = "pid";
+constexpr const char *kAddrKey = "addr";
+
+string getPid() {
     return to_string(getpid());
 }
 
-string get_app() {
+string getApp() {
     string proc{"unknown"};
     char path[1024] = {0};
     if (readlink("/proc/self/exe", path, sizeof(path) - 1) > 0) {
@@ -30,7 +35,7 @@ string get_app() {
     return proc;
 }
 
-int get_ip_linux(int ipv4_6, string &out) {
+int getIpLinux(int ipv4_6, string &out) {
     int ret_val;
     struct ifaddrs *ifAddrStruct = nullptr;
     void *tmpAddrPtr;
@@ -68,9 +73,9 @@ int get_ip_linux(int ipv4_6, string &out) {
     return ret_val;
 }
 
-string get_ipv4_linux() {
+string getIpv4Linux() {
     string out;
-    auto ret = get_ip_linux(AF_INET, out);
+    auto ret = getIpLinux(AF_INET, out);
     if (ret != 0) {
         return "unknown";
     }
@@ -80,34 +85,26 @@ string get_ipv4_linux() {
 } // namespace detail
 
 MsgFiller::MsgFiller()
-    : m_app(detail::get_app())
-    , m_pid(detail::get_pid())
-    , m_addr(detail::get_ipv4_linux()) {
-    dzlog_debug("MsgFiller ctor %s %s %s", m_app.c_str(), m_pid.c_str(), m_addr.c_str());
+    : m_app(detail::getApp())
+    , m_pid(detail::getPid())
+    , m_addr(detail::getIpv4Linux()) {
 }
 
-MsgFiller::~MsgFiller() {
-    dzlog_debug("MsgFill dctor");
-}
+MsgFiller::~MsgFiller() = default;
 
 void MsgFiller::Intercept(unique_ptr<Message> &msg) {
-    msg->SetAnnotation(kAppKey, m_app);
-    msg->SetAnnotation(kPidKey, m_pid);
-    msg->SetAnnotation(kAddrKey, m_addr);
+    msg->SetAnnotation(detail::kAppKey, m_app);
+    msg->SetAnnotation(detail::kPidKey, m_pid);
+    msg->SetAnnotation(detail::kAddrKey, m_addr);
 }
 
 void MsgFiller::Close() {
     // do nothing
-    dzlog_debug("MsgFill close");
 }
 
-MsgPrinter::MsgPrinter() {
-    dzlog_debug("MsgPrinter ctor");
-}
+MsgPrinter::MsgPrinter() = default;
 
-MsgPrinter::~MsgPrinter() {
-    dzlog_debug("MsgPrinter dctor");
-}
+MsgPrinter::~MsgPrinter() = default;
 
 void MsgPrinter::Intercept(unique_ptr<Message> &msg) {
     dzlog_debug("MsgPrinter %s", Message::ToString(msg).c_str());
@@ -115,5 +112,4 @@ void MsgPrinter::Intercept(unique_ptr<Message> &msg) {
 
 void MsgPrinter::Close() {
     // do nothing
-    dzlog_debug("MsgPrinter close");
 }

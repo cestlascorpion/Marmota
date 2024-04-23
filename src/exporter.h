@@ -2,6 +2,18 @@
 
 #include <memory>
 
+namespace httplib {
+
+class Client;
+
+};
+
+namespace sw::redis {
+
+class Redis;
+
+};
+
 namespace qalarm {
 
 class Message;
@@ -16,22 +28,32 @@ public:
 
 class HttpExporter : public MsgExporter {
 public:
-    HttpExporter();
+    HttpExporter(std::string host, int port, std::string path);
     ~HttpExporter() override;
 
     // thread-unsafe
     bool Export(std::unique_ptr<Message>& msg) override;
     void Close() override;
+
+private:
+    std::string m_host;
+    int m_port;
+    std::string m_path;
+    std::unique_ptr<httplib::Client> m_client;
 };
 
 class RedisExporter : public MsgExporter {
 public:
-    RedisExporter();
+    explicit RedisExporter(std::string addr);
     ~RedisExporter() override;
 
     // thread-unsafe
     bool Export(std::unique_ptr<Message>& msg) override;
     void Close() override;
+
+private:
+    std::string m_addr;
+    std::unique_ptr<sw::redis::Redis> m_client;
 };
 
 } // namespace qalarm
