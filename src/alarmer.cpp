@@ -1,8 +1,9 @@
 #include "alarmer.h"
-#include "interceptor.h"
-#include "exporter.h"
 
 #include <chrono>
+
+#include "exporter.h"
+#include "interceptor.h"
 
 using namespace std;
 using namespace qalarm;
@@ -47,7 +48,7 @@ Alarmer::~Alarmer() {
     }
 }
 
-int Alarmer::AlarmFatal(uint32_t code, string desc, map<string,string> annot) {
+int Alarmer::AlarmFatal(uint32_t code, string desc, map<string, string> annot) {
     auto ptr = make_unique<Message>(MsgLevel::FATAL, code, std::move(desc), std::move(annot));
     auto ok = m_queue.TryPush(std::move(ptr));
     if (!ok) {
@@ -56,7 +57,7 @@ int Alarmer::AlarmFatal(uint32_t code, string desc, map<string,string> annot) {
     return 0;
 }
 
-int Alarmer::AlarmError(uint32_t code, string desc, map<string,string> annot) {
+int Alarmer::AlarmError(uint32_t code, string desc, map<string, string> annot) {
     auto ptr = make_unique<Message>(MsgLevel::ERROR, code, std::move(desc), std::move(annot));
     auto ok = m_queue.TryPush(std::move(ptr));
     if (!ok) {
@@ -65,7 +66,7 @@ int Alarmer::AlarmError(uint32_t code, string desc, map<string,string> annot) {
     return 0;
 }
 
-int Alarmer::AlarmWarn(uint32_t code, string desc, map<string,string> annot) {
+int Alarmer::AlarmWarn(uint32_t code, string desc, map<string, string> annot) {
     auto ptr = make_unique<Message>(MsgLevel::WARN, code, std::move(desc), std::move(annot));
     auto ok = m_queue.TryPush(std::move(ptr));
     if (!ok) {
@@ -74,7 +75,7 @@ int Alarmer::AlarmWarn(uint32_t code, string desc, map<string,string> annot) {
     return 0;
 }
 
-int Alarmer::AlarmNotice(uint32_t code, string desc, map<string,string> annot) {
+int Alarmer::AlarmNotice(uint32_t code, string desc, map<string, string> annot) {
     auto ptr = make_unique<Message>(MsgLevel::NOTICE, code, std::move(desc), std::move(annot));
     auto ok = m_queue.TryPush(std::move(ptr));
     if (!ok) {
@@ -83,7 +84,7 @@ int Alarmer::AlarmNotice(uint32_t code, string desc, map<string,string> annot) {
     return 0;
 }
 
-int Alarmer::AlarmInfo(uint32_t code, string desc, map<string,string> annot) {
+int Alarmer::AlarmInfo(uint32_t code, string desc, map<string, string> annot) {
     auto ptr = make_unique<Message>(MsgLevel::INFO, code, std::move(desc), std::move(annot));
     auto ok = m_queue.TryPush(std::move(ptr));
     if (!ok) {
@@ -92,7 +93,7 @@ int Alarmer::AlarmInfo(uint32_t code, string desc, map<string,string> annot) {
     return 0;
 }
 
-int Alarmer::AlarmDebug(uint32_t code, string desc, map<string,string> annot) {
+int Alarmer::AlarmDebug(uint32_t code, string desc, map<string, string> annot) {
     auto ptr = make_unique<Message>(MsgLevel::DEBUG, code, std::move(desc), std::move(annot));
     auto ok = m_queue.TryPush(std::move(ptr));
     if (!ok) {

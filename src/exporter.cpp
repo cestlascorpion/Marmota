@@ -1,7 +1,7 @@
 #include "exporter.h"
-#include "message.h"
 
 #include "httplib.h"
+#include "message.h"
 #include "sw/redis++/redis++.h"
 
 using namespace std;
@@ -40,8 +40,7 @@ void HttpExporter::Close() {
 
 RedisExporter::RedisExporter(string addr)
     : m_addr(std::move(addr))
-    , m_client(make_unique<sw::redis::Redis>(m_addr)) {
-}
+    , m_client(make_unique<sw::redis::Redis>(m_addr)) {}
 
 RedisExporter::~RedisExporter() = default;
 

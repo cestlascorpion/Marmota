@@ -1,8 +1,8 @@
 #pragma once
 
-#include <vector>
-#include <memory>
 #include <future>
+#include <memory>
+#include <vector>
 
 #include "message.h"
 #include "queue.h"

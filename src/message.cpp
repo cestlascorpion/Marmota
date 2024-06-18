@@ -1,8 +1,8 @@
 #include "message.h"
 
 #include <chrono>
-#include <ctime>
 #include <cstring>
+#include <ctime>
 
 #include "json-c/json.h"
 
@@ -13,8 +13,7 @@ namespace detail {
 
 struct JsonGuard {
     explicit JsonGuard(json_object *obj)
-        : job(obj) {
-    }
+        : job(obj) {}
     ~JsonGuard() {
         json_object_put(job);
     }
@@ -99,16 +98,14 @@ Message::Message(MsgLevel level, uint32_t code, string desc, map<string, string>
     , m_co(code)
     , m_tp(chrono::duration_cast<chrono::seconds>(chrono::system_clock::now().time_since_epoch()).count())
     , m_desc(std::move(desc))
-    , m_annotation(std::move(annot)) {
-}
+    , m_annotation(std::move(annot)) {}
 
 Message::Message(MsgLevel level, uint32_t code, string desc, time_t tp, map<string, string> annot)
     : m_lv(level)
     , m_co(code)
     , m_tp(tp)
     , m_desc(std::move(desc))
-    , m_annotation(std::move(annot)) {
-}
+    , m_annotation(std::move(annot)) {}
 
 uint64_t Message::GeMsgId() const {
     return std::hash<string>()(m_desc) ^ m_co;

@@ -1,11 +1,12 @@
 #include "interceptor.h"
-#include "message.h"
 
-#include <unistd.h>
-#include <cstring>
-#include <ifaddrs.h>
 #include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <unistd.h>
 
+#include <cstring>
+
+#include "message.h"
 #include "zlog.h"
 
 using namespace std;
@@ -87,8 +88,7 @@ string getIpv4Linux() {
 MsgFiller::MsgFiller()
     : m_app(detail::getApp())
     , m_pid(detail::getPid())
-    , m_addr(detail::getIpv4Linux()) {
-}
+    , m_addr(detail::getIpv4Linux()) {}
 
 MsgFiller::~MsgFiller() = default;
 

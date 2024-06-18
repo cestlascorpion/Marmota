@@ -1,7 +1,7 @@
+#include "message.h"
+
 #include <iostream>
 #include <memory>
-
-#include "message.h"
 
 #include "zlog.h"
 
